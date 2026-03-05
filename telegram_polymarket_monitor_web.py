@@ -15,6 +15,7 @@ TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "20"))
 STATE_PATH = Path(os.environ.get("STATE_PATH", "/root/.openclaw/workspace/.tg_poly_web_state.json"))
 MAX_MARKETS = int(os.environ.get("MAX_MARKETS", "3"))
+OVERLAP_THRESHOLD = float(os.environ.get("OVERLAP_THRESHOLD", "0.35"))
 
 
 def load_state():
@@ -78,31 +79,69 @@ def run_poly_search(query: str, limit: int = 8):
         return []
 
 
+def _tokenize(text: str):
+    text = re.sub(r"https?://\S+", " ", (text or "").lower())
+    text = re.sub(r"[^a-z0-9\u4e00-\u9fff\s]", " ", text)
+    toks = [w for w in text.split() if len(w) >= 2]
+    stop = {
+        "will", "this", "that", "with", "from", "have", "has", "into", "about", "after", "before",
+        "today", "tomorrow", "could", "would", "should", "their", "there", "where", "when", "what",
+        "消息", "报道", "表示", "将", "已", "在", "于", "和", "及", "对", "的", "了", "月", "日",
+    }
+    return [t for t in toks if t not in stop]
+
+
+def _extract_entities(text: str):
+    t = (text or "").lower()
+    known = [
+        "okx", "okb", "binance", "coinbase", "bybit", "kraken", "hyperliquid", "ethena", "opensea",
+        "bitcoin", "btc", "ethereum", "eth", "solana", "sol", "xrp", "doge", "trump", "fed", "etf",
+        "base", "arbitrum", "optimism", "polygon", "sui", "ton", "ai", "nasdaq", "sp500",
+    ]
+    out = {k for k in known if k in t}
+    uppers = re.findall(r"\b[A-Z]{2,10}\b", text or "")
+    out.update(u.lower() for u in uppers)
+    return out
+
+
 def market_matches(title: str, content: str):
-    res = run_poly_search(title, 8)
+    res = run_poly_search(title, 10)
     if not res:
-        words = re.sub(r"https?://\S+", " ", (title + " " + content).lower())
-        words = re.sub(r"[^a-z0-9\u4e00-\u9fff\s]", " ", words)
-        toks = [w for w in words.split() if len(w) > 2][:8]
+        toks = _tokenize(title + " " + content)[:10]
         if toks:
-            res = run_poly_search(" ".join(toks), 8)
+            res = run_poly_search(" ".join(toks), 10)
+
+    src_tokens = set(_tokenize(title))
+    src_entities = _extract_entities(title)
 
     out = []
     seen = set()
     for m in res:
         slug = (m.get("slug") or "").strip()
         q = (m.get("question") or "").strip()
-        if not slug or not q:
+        if not slug or not q or slug in seen:
             continue
-        if slug in seen:
+
+        q_tokens = set(_tokenize(q))
+        overlap_ratio = (len(src_tokens & q_tokens) / max(len(src_tokens), 1)) if src_tokens else 0.0
+
+        # 规则1：关键词重叠阈值
+        if overlap_ratio < OVERLAP_THRESHOLD:
             continue
+
+        # 规则2：实体硬约束（标题里有实体时，市场必须命中至少一个同实体）
+        if src_entities:
+            q_entities = _extract_entities(q)
+            if not (src_entities & q_entities):
+                continue
+
         seen.add(slug)
         vol_raw = m.get("volume")
         try:
             vol = float(vol_raw) if vol_raw is not None else None
         except Exception:
             vol = None
-        out.append({"title": q, "slug": slug, "volume": vol})
+        out.append({"title": q, "slug": slug, "volume": vol, "score": round(overlap_ratio, 3)})
         if len(out) >= MAX_MARKETS:
             break
     return out
