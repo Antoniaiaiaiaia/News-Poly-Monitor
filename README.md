@@ -1,4 +1,4 @@
-# newschannelpolymonitor
+# News-Poly-Monitor
 
 监控 Telegram 新闻频道，自动匹配 Polymarket 相关预测市场，并推送到目标频道。
 
