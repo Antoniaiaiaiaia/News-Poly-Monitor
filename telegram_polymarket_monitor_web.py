@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 SOURCE_URL = os.environ.get("SOURCE_URL", "https://t.me/s/TechFlowDaily")
-TARGET_CHAT_ID = os.environ.get("TARGET_CHAT_ID", "-1003713216091")
+TARGET_CHAT_ID = os.environ.get("TARGET_CHAT_ID", "your_target_channel_id")
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 POLL_SECONDS = int(os.environ.get("POLL_SECONDS", "20"))
 STATE_PATH = Path(os.environ.get("STATE_PATH", "/root/.openclaw/workspace/.tg_poly_web_state.json"))
