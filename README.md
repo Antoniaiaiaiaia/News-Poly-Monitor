@@ -13,8 +13,8 @@
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `SOURCE_URL` | 监控的 Telegram 频道 URL | `https://t.me/s/TechFlowDaily` |
-| `TARGET_CHAT_ID` | 推送目标频道 ID | 无 |
-| `TG_BOT_TOKEN` | Telegram Bot Token（必填） | 无 |
+| `TARGET_CHAT_ID` | 推送目标频道 ID | 你的频道 ID |
+| `TG_BOT_TOKEN` | Telegram Bot Token（必填） | 你的bot IR |
 | `POLL_SECONDS` | 轮询间隔（秒） | `20` |
 | `STATE_PATH` | 状态文件路径 | `/root/.openclaw/workspace/.tg_poly_web_state.json` |
 | `MAX_MARKETS` | 每条新闻最多展示的市场数 | `3` |
