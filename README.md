@@ -22,7 +22,7 @@
 ## 依赖
 
 - Python 3.8+
-- [`polymarket` CLI](https://github.com/polymarket/cli)（需在 PATH 中可用）
+- [polymarket CLI](https://github.com/polymarket/cli)（需在 PATH 中可用）
 
 ## 使用
 
